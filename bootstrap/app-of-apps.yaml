@@ -27,7 +27,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: 
+        repoURL: https://github.com/FelipeVerbanek/repasse-2026.git
         targetRevision: HEAD
         path: '{{path}}'
       destination:

@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: prod
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  description: Projeto de Producao
+  sourceRepos:
+  - '*'
+  destinations:
+  - namespace: '*'
+    server: https://10.89.0.4:6443
+  - server: https://kubernetes.default.svc
+    namespace: "*"
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
