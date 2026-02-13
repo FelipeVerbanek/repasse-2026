@@ -21,6 +21,7 @@ spec:
       revision: HEAD
       directories:
       - path: bootstrap/projects
+      - path: bootstrap/apps/*
   template:
     metadata:
       name: '{{path.basename}}'
