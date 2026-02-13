@@ -21,7 +21,12 @@ spec:
       revision: HEAD
       directories:
       - path: bootstrap/projects
-      - path: bootstrap/apps/*
+      - path: bootstrap/apps/*  
+  - git:
+      repoURL: https://github.com/FelipeVerbanek/repasse-2026.git
+      revision: HEAD
+      files:
+      - path: bootstrap/addons.yaml        
   template:
     metadata:
       name: '{{path.basename}}'
