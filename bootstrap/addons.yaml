@@ -23,7 +23,7 @@ spec:
           valueFiles:
           - values.yaml
       destination:
-        name: "https://10.89.0.3:6443"
+        server: https://10.89.0.3:6443
         namespace: '{{path[2]}}'
       syncPolicy:
         automated:
