@@ -7,7 +7,7 @@ spec:
   generators:
   - git:
       repoURL: https://github.com/FelipeVerbanek/repasse-2026.git
-      revision: main
+      revision: master
       directories:
       - path: "addons/helmcharts/*/*"
   template:
@@ -17,7 +17,7 @@ spec:
       project: default
       source:
         repoURL: https://github.com/FelipeVerbanek/repasse-2026.git
-        targetRevision: main
+        targetRevision: master
         path: '{{path}}'
         helm:
           valueFiles:
