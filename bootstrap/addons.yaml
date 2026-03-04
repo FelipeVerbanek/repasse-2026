@@ -1,45 +1,33 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: addons-helm
+  name: addons-helm-hefesto
   namespace: argocd
 spec:
   generators:
-  - list:
-      elements:
-      - name: metric-server-dev
-        repoURL: https://github.com/FelipeVerbanek/repasse-2026.git
-        namespace: monitoring
-        server: https://10.89.0.3:6443
-        path: helm-charts/dev/metricsserver
-        valuesFile: values.yaml
-
-      - name: metric-server-prod
-        repoURL: https://github.com/FelipeVerbanek/repasse-2026.git
-        namespace: monitoring
-        server: https://10.89.0.4:6443
-        path: helm-charts/prod/metricsserver
-        valuesFile: values.yaml
-  
+  - git:
+      repoURL: https://github.com/FelipeVerbanek/repasse-2026.git
+      revision: main
+      directories:
+      - path: "addons/helmcharts/*/*"
   template:
     metadata:
-      name: "addon-{{name}}"
+      name: '{{path.basename}}-{{path[0]}}'
     spec:
       project: default
       source:
-        repoURL: "{{repoURL}}"
-        targetRevision: HEAD
-        path: "{{path}}"
+        repoURL: https://github.com/FelipeVerbanek/repasse-2026.git
+        targetRevision: main
+        path: '{{path}}'
         helm:
           valueFiles:
-          - "{{valuesFile}}"
+          - values.yaml
       destination:
-        server: "{{server}}"
-        namespace: "{{namespace}}"
+        name: "hefesto"
+        namespace: '{{path[2]}}'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         syncOptions:
         - CreateNamespace=true
-

@@ -1,0 +1,83 @@
+opentelemetry-collector:
+  mode: daemonset
+
+  config:
+    exporters:
+      otlp/otel-core:
+        endpoint: "opentelemetry-collector-core.observability.svc:4317"
+        tls:
+          insecure: true
+
+    service:
+      telemetry:
+        logs:
+          level: "debug"
+      pipelines:
+        traces:
+          processors:
+            [transform/truncate, batch, memory_limiter]
+          exporters: [debug, otlp/otel-core]
+
+        traces/metrics:
+          receivers: ["otlp"]
+          exporters: [spanmetrics]
+
+        metrics:
+          receivers: [spanmetrics]
+          processors: [batch, memory_limiter]
+          exporters: [debug, otlp/otel-core]
+
+    connectors:
+      spanmetrics:
+        histogram:
+          explicit:
+            buckets: [0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 3, 5, 8, 10, 15, 20, 25, 30, 40, 60]
+        dimensions:
+          - name: http.method
+            default: GET
+          - name: http.status_code
+          - name: request_type
+        exemplars:
+          enabled: true
+        dimensions_cache_size: 1000
+        aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"    
+        metrics_flush_interval: 15s
+        metrics_expiration: 5m
+
+    processors:
+      transform/truncate:
+        trace_statements:
+          - context: span
+            statements:
+              - limit(attributes, 100, [])
+              - truncate_all(attributes, 512)
+
+      memory_limiter:
+        check_interval: 10s
+        limit_percentage: 80
+        spike_limit_percentage: 30
+
+  image:
+    repository: otel/opentelemetry-collector-contrib
+
+ 
+  priorityClassName: "system-cluster-critical"
+
+  ports:
+    metrics:
+      enabled: false
+
+  resources:
+    limits:
+      cpu: 100m
+      memory: 226Mi
+    requests:
+      memory: "150Mi"
+      cpu: "100m"
+
+  podLabels:
+    app: opentelemetry-collector-ds
+
+  hostNetwork: true
+
+  dnsPolicy: "ClusterFirstWithHostNet"

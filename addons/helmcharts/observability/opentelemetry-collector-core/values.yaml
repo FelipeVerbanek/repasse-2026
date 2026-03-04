@@ -1,0 +1,125 @@
+opentelemetry-collector:
+  mode: deployment
+
+  image:
+    # If you want to use the core image `otel/opentelemetry-collector`, you also need to change `command.name` value to `otelcol`.
+    repository: "otel/opentelemetry-collector-contrib"
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+    # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
+    digest: ""
+
+  replicaCount: 1
+
+  config:
+    exporters:
+      debug: {}
+      otlp/tempo:
+        endpoint: "tempo-distributor.observability.svc.cluster.local:4317"
+        tls:
+          insecure: true
+      prometheusremotewrite:
+        endpoint: "http://prometheus-kube-prometheus-prometheus.monitoring:9090/api/v1/write"
+        remote_write_queue:
+          enabled: true
+          queue_size: 100000
+          num_consumers: 5
+
+    extensions:
+      health_check:
+        endpoint: ${env:MY_POD_IP}:13133
+
+    processors:
+      batch: {}
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+
+    receivers:
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:14250
+          thrift_http:
+            endpoint: ${env:MY_POD_IP}:14268
+          thrift_compact:
+            endpoint: ${env:MY_POD_IP}:6831
+      otlp:
+        protocols:
+          grpc:
+            endpoint: ${env:MY_POD_IP}:4317
+          http:
+            endpoint: ${env:MY_POD_IP}:4318
+      zipkin:
+        endpoint: ${env:MY_POD_IP}:9411
+
+    service:
+      telemetry:
+        logs:
+          level: "debug"
+      extensions:
+        - health_check
+      pipelines:
+        traces:
+          receivers: [otlp, jaeger, zipkin]
+          processors: [memory_limiter, batch]
+          exporters: [debug, otlp/tempo]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [debug, prometheusremotewrite]
+
+  ports:
+    otlp:
+      enabled: true
+      containerPort: 4317
+      servicePort: 4317
+      hostPort: 4317
+      protocol: TCP
+      appProtocol: grpc
+    otlp-http:
+      enabled: true
+      containerPort: 4318
+      servicePort: 4318
+      hostPort: 4318
+      protocol: TCP
+    jaeger-compact:
+      enabled: true
+      containerPort: 6831
+      servicePort: 6831
+      hostPort: 6831
+      protocol: UDP
+    jaeger-thrift:
+      enabled: true
+      containerPort: 14268
+      servicePort: 14268
+      hostPort: 14268
+      protocol: TCP
+    jaeger-grpc:
+      enabled: true
+      containerPort: 14250
+      servicePort: 14250
+      hostPort: 14250
+      protocol: TCP
+    zipkin:
+      enabled: true
+      containerPort: 9411
+      servicePort: 9411
+      hostPort: 9411
+      protocol: TCP
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+
+  useGOMEMLIMIT: true
+
+
+  podLabels:
+    app: opentelemetry-collector-core
+
+  service:
+    type: ClusterIP
